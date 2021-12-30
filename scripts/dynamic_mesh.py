@@ -34,17 +34,13 @@ class DynamicMesh(Callback):
         self.radius = radius
         self.map_name = map_name
         self.name = name
-        self.center_name = cmd.get_unused_name('_center')
         self.callback_name = cmd.get_unused_name('_cb')
 
         cmd.set("auto_zoom", 0)
-        cmd.pseudoatom(self.center_name)
-        cmd.hide("everything", self.center_name)
 
         symmetry = cmd.get_symmetry(sym_source or map_name)
         if symmetry:
             cmd.set("map_auto_expand_sym", 1)
-            cmd.set_symmetry(self.center_name, *symmetry)
 
         cmd.set_key("pgup", self.contour_plus)
         cmd.set_key("pgdn", self.contour_minus)
@@ -66,8 +62,7 @@ class DynamicMesh(Callback):
 
     def update(self):
         self.center = cmd.get_position()
-        cmd.alter_state(0, self.center_name, f"(x, y, z) = {self.center}")
-        cmd.isomesh(self.name, self.map_name, self.level, self.center_name, carve=self.radius)
+        cmd.isomesh(self.name, self.map_name, self.level, "center", buffer=0.0, carve=self.radius)
 
     def __call__(self):
         if self.name not in cmd.get_names('objects'):
@@ -78,9 +73,10 @@ class DynamicMesh(Callback):
 
         tmp = cmd.get_position()
         r = cpv.distance_sq(self.center, tmp)
-        if (r > 0.3):  # increase this number if it is too slow
+        if (r > 0.01):  # increase this number if it is too slow
             self.update()
 
+        
     def get_extent(self):
         tmp = cmd.get_position()
         return [[i - self.radius for i in tmp], [i + self.radius for i in tmp]]
